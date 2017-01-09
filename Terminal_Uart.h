@@ -4,24 +4,54 @@
 #include "stm32f7xx_hal.h"
 #include "Serial.h"
 
-void Terminal_Uart_Atencion(UART_HandleTypeDef *UART, uint8_t * Terminal_Uart_Mensaje, uint16_t Tamanio)
+//---------------------------------------------------
+//
+//
+//
+//
+//---------------------------------------------------
+void Terminal_Uart_Enviar(UART_HandleTypeDef *UARTEnviar)
 {
+		uint8_t * Terminal_Uart_Mensaje;
 	
-	//Para Recibir Mensaje desde Uart hasta Consola
-	if(HAL_UART_Receive(UART, Terminal_Uart_Mensaje, Tamanio, 1) == HAL_OK)
-	{
-		Serial_ImprimirString(Terminal_Uart_Mensaje);
-		return;
-	}
-	
-	//Para enviar Mensaje desde Consola a Uart 
-	Serial_Atencion();
 	int8_t Status = Serial_getString(Terminal_Uart_Mensaje);
 	if( Status != SIN_CADENA)
 	{
-		HAL_UART_Transmit(UART, Terminal_Uart_Mensaje, Status, 100);
+		HAL_UART_Transmit(UARTEnviar, Terminal_Uart_Mensaje, Status, 100);
 	}
-
 }
+
+//---------------------------------------------------
+//
+//
+//
+//
+//---------------------------------------------------
+void Terminal_Uart_Recibir(UART_HandleTypeDef *UARTRecibir)
+{
+	uint8_t * Terminal_Uart_Rx;
+
+	if(HAL_UART_Receive(UARTRecibir, Terminal_Uart_Rx,1,100) == HAL_TIMEOUT)
+	{
+		return;
+	}
+	printf("%c",*Terminal_Uart_Rx);
+	Terminal_Uart_Rx++;
+	
+}
+
+//---------------------------------------------------
+//
+//
+//
+//
+//---------------------------------------------------
+void Terminal_Uart_Atencion(UART_HandleTypeDef *UART)
+{
+	Serial_Atencion();
+	Terminal_Uart_Enviar(UART);
+	Terminal_Uart_Recibir(UART);
+}
+
 
 #endif
