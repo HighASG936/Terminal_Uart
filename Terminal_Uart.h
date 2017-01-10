@@ -49,9 +49,8 @@ void Terminal_Uart_Recibir(UART_HandleTypeDef *UARTRecibir)
 void Terminal_Uart_Atencion(UART_HandleTypeDef *UART)
 {
 	Serial_Atencion();
-	Terminal_Uart_Enviar(UART);
-	Terminal_Uart_Recibir(UART);
+	//Terminal_Uart_Enviar(UART);
+	//Terminal_Uart_Recibir(UART);
 }
-
 
 #endif
