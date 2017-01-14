@@ -4,40 +4,61 @@
 #include "stm32f7xx_hal.h"
 #include "Serial.h"
 
-//---------------------------------------------------
-//
-//
-//
-//
-//---------------------------------------------------
-void Terminal_Uart_Enviar(UART_HandleTypeDef *UARTEnviar)
+
+typedef enum
 {
-		uint8_t * Terminal_Uart_Mensaje;
+	UartBusy,
+	UartIdle
+}eEstadoUart;
+
+
+typedef union
+{
+	uint8_t all;
 	
-	int8_t Status = Serial_getString(Terminal_Uart_Mensaje);
-	if( Status != SIN_CADENA)
+	struct
 	{
-		HAL_UART_Transmit(UARTEnviar, Terminal_Uart_Mensaje, Status, 100);
-	}
-}
+		uint8_t Enviando		 	: 1;
+		uint8_t Recibiendo	 	: 1;
+		uint8_t Bit2					: 1;
+		uint8_t Bit3					:	1;
+		uint8_t Bit4					:	1;
+		uint8_t Bit5					:	1;
+		uint8_t Bit6					:	1;
+		uint8_t Bit7					:	1;
+	};
 
-//---------------------------------------------------
-//
-//
-//
-//
-//---------------------------------------------------
-void Terminal_Uart_Recibir(UART_HandleTypeDef *UARTRecibir)
+
+}eFlags;
+
+
+
+typedef struct
 {
-	uint8_t * Terminal_Uart_Rx;
+	eFlags Flag;
+	uint8_t BufferComando[100];
+}sTerminalUart;
 
-	if(HAL_UART_Receive(UARTRecibir, Terminal_Uart_Rx,1,100) == HAL_TIMEOUT)
+sTerminalUart gsTerminalUart;
+//---------------------------------------------------
+//
+//
+//
+//
+//---------------------------------------------------
+void Terminal_Uart_EnviarComando(UART_HandleTypeDef * UARTEnviar)
+{
+	int8_t Status;
+	if(gsTerminalUart.Flag.Recibiendo == true)return;
+	Status = Serial_getString(gsTerminalUart.BufferComando);
+	if(Status  == SIN_CADENA) return;
+	if(Status  == SerialBusy) 
 	{
+		gsTerminalUart.Flag.Enviando = true;
 		return;
 	}
-	printf("%c",*Terminal_Uart_Rx);
-	Terminal_Uart_Rx++;
-	
+	HAL_UART_Transmit(UARTEnviar, gsTerminalUart.BufferComando,Status,50);
+	gsTerminalUart.Flag.Enviando = false;
 }
 
 //---------------------------------------------------
@@ -46,11 +67,33 @@ void Terminal_Uart_Recibir(UART_HandleTypeDef *UARTRecibir)
 //
 //
 //---------------------------------------------------
-void Terminal_Uart_Atencion(UART_HandleTypeDef *UART)
+void Terminal_Uart_Recibir(UART_HandleTypeDef * UARTRecibir)
+{
+	uint8_t CaracterRecibido = 0x00;
+	if(gsTerminalUart.Flag.Enviando == true) return;
+	HAL_UART_Receive(UARTRecibir, &CaracterRecibido,1,100);
+	if(CaracterRecibido == 0x00) return;
+	if(CaracterRecibido != '\n')
+	{ 
+		gsTerminalUart.Flag.Recibiendo = true;
+		printf("%c", CaracterRecibido);
+		return;
+	}
+	gsTerminalUart.Flag.Recibiendo = false;
+	printf("\n");
+}
+
+//---------------------------------------------------
+//
+//
+//
+//
+//---------------------------------------------------
+void Terminal_Uart_Atencion(UART_HandleTypeDef UART)
 {
 	Serial_Atencion();
-	//Terminal_Uart_Enviar(UART);
-	//Terminal_Uart_Recibir(UART);
+	Terminal_Uart_EnviarComando(&UART);
+	Terminal_Uart_Recibir(&UART);
 }
 
 #endif
