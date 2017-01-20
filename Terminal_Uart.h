@@ -4,12 +4,17 @@
 #include "stm32f7xx_hal.h"
 #include "Serial.h"
 
+void Terminal_Uart_Inicializar(void);
+void Terminal_Uart_EnviarComando(UART_HandleTypeDef * UARTEnviar);
+uint8_t Terminal_Uart_Recibir(UART_HandleTypeDef * UARTRecibir);
+void Terminal_Uart_Atencion(UART_HandleTypeDef UART);
 
 typedef enum
 {
 	UartBusy,
 	UartIdle, 
 	UartWaiting
+	
 }eEstadoUart;
 
 
@@ -28,8 +33,6 @@ typedef union
 		uint8_t Bit6								:	1;
 		uint8_t Bit7								:	1;
 	};
-
-
 }eFlags;
 
 
@@ -42,7 +45,12 @@ typedef struct
 
 sTerminalUart gsTerminalUart;
 
-
+//---------------------------------------------------
+//
+//
+//
+//
+//---------------------------------------------------
 void Terminal_Uart_Inicializar(void)
 {
 	Serial_Iniciar();
