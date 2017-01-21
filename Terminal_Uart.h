@@ -91,7 +91,11 @@ uint8_t Terminal_Uart_Recibir(UART_HandleTypeDef * UARTRecibir)
 	uint8_t CaracterRecibido = 0x00;
 	if(gsTerminalUart.Flag.Enviando == true) return(UartWaiting);
 	HAL_UART_Receive(UARTRecibir, &CaracterRecibido,1,100);
-	if(CaracterRecibido == 0x00) return(UartIdle);
+	if(CaracterRecibido == 0x00) 
+	{
+		gsTerminalUart.Flag.ComandoPendiente = false;
+		return(UartIdle);
+	}
 	if(CaracterRecibido != '\n')
 	{ 
 		gsTerminalUart.Flag.Recibiendo = true;
