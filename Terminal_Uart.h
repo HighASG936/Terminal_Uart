@@ -7,7 +7,10 @@
 void Terminal_Uart_Inicializar(void);
 void Terminal_Uart_EnviarComando(UART_HandleTypeDef * UARTEnviar);
 uint8_t Terminal_Uart_Recibir(UART_HandleTypeDef * UARTRecibir);
+uint8_t Terminal_Uart_GetCharRx(void);
 void Terminal_Uart_Atencion(UART_HandleTypeDef UART);
+
+extern eSerial gsSerial;
 
 typedef enum
 {
@@ -40,6 +43,7 @@ typedef union
 typedef struct
 {
 	eFlags Flag;
+	uint8_t CharRx;
 	uint8_t BufferComando[100];
 }sTerminalUart;
 
@@ -54,7 +58,8 @@ sTerminalUart gsTerminalUart;
 void Terminal_Uart_Inicializar(void)
 {
 	Serial_Iniciar();
-	Serial_InitBuzzer(GPIOI, GPIO_PIN_3);
+	gsTerminalUart.Flag.all = 0x00;
+	gsSerial.InitBuzzer(GPIOI, GPIO_PIN_3);
 }
 
 
@@ -69,7 +74,8 @@ void Terminal_Uart_EnviarComando(UART_HandleTypeDef * UARTEnviar)
 {
 	int8_t Status;
 	if(gsTerminalUart.Flag.Recibiendo == true)return;
-	Status = Serial_getString(gsTerminalUart.BufferComando);
+	HAL_GPIO_TogglePin(LED_GPIO_Port,LED_Pin);
+	Status = gsSerial.getString(gsTerminalUart.BufferComando);
 	if(Status  == SIN_CADENA) return;
 	if(Status  == SerialBusy) 
 	{
@@ -90,7 +96,9 @@ uint8_t Terminal_Uart_Recibir(UART_HandleTypeDef * UARTRecibir)
 {
 	uint8_t CaracterRecibido = 0x00;
 	if(gsTerminalUart.Flag.Enviando == true) return(UartWaiting);
+	HAL_GPIO_TogglePin(LED_GPIO_Port,LED_Pin);
 	HAL_UART_Receive(UARTRecibir, &CaracterRecibido,1,100);
+	gsTerminalUart.CharRx = CaracterRecibido;
 	if(CaracterRecibido == 0x00) 
 	{
 		gsTerminalUart.Flag.ComandoPendiente = false;
@@ -108,6 +116,11 @@ uint8_t Terminal_Uart_Recibir(UART_HandleTypeDef * UARTRecibir)
 	return(UartBusy);
 }
 
+uint8_t Terminal_Uart_GetCharRx(void)
+{
+	return gsTerminalUart.CharRx;
+}
+
 //---------------------------------------------------
 //
 //
@@ -118,6 +131,7 @@ void Terminal_Uart_Atencion(UART_HandleTypeDef UART)
 {
 	Terminal_Uart_EnviarComando(&UART);
 	Terminal_Uart_Recibir(&UART);
+	if(gsTerminalUart.Flag.all & 0x03) HAL_GPIO_WritePin(LED_GPIO_Port,LED_Pin,GPIO_PIN_SET);
 }
 
 #endif
