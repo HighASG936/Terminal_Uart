@@ -1,17 +1,35 @@
 #ifndef TERMINAL_UART_H
 #define TERMINAL_UART_H
 
+/*
+=============================================================================================
+Name of File: Terminal_Uart.h
+
+Author:	Aurelio Siordia González
+Date:	20/01/2017
+
+Description:
+
+How to use:
+
+=============================================================================================
+*/
+
+//includes----------------------------------------------------------------------------------/
 #include "stm32f7xx_hal.h"
 #include "Serial.h"
 
+//Prototipos--------------------------------------------------------------------------------/
 void Terminal_Uart_Inicializar(void);
 void Terminal_Uart_EnviarComando(UART_HandleTypeDef * UARTEnviar);
 uint8_t Terminal_Uart_Recibir(UART_HandleTypeDef * UARTRecibir);
 uint8_t Terminal_Uart_GetCharRx(void);
 void Terminal_Uart_Atencion(UART_HandleTypeDef UART);
 
+//Variables externas------------------------------------------------------------------------/
 extern eSerial gsSerial;
 
+//Estructuras y uniones---------------------------------------------------------------------/
 typedef enum
 {
 	UartBusy,
@@ -45,18 +63,42 @@ typedef struct
 	eFlags Flag;
 	uint8_t CharRx;
 	uint8_t BufferComando[100];
+	
+	struct
+	{
+	void 		(*EnviarComando)(UART_HandleTypeDef * UARTEnviar);
+	uint8_t (*Recibir)			(UART_HandleTypeDef * UARTRecibir);
+	uint8_t (*GetCharRx)		(void);
+	void 		(*Atencion)			(UART_HandleTypeDef UART);	
+	
+	};
+	
 }sTerminalUart;
 
+//Variables privadas------------------------------------------------------------------------/
 sTerminalUart gsTerminalUart;
 
-//---------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------------
+//Name: Terminal_Uart_Inicializar
+//
+//Description:
 //
 //
+//Parameters: 
 //
+//Return: 
 //
-//---------------------------------------------------
+//Author: Aurelio Siordia González
+//Fecha: 20/01/2017
+//-------------------------------------------------------------------------------------------------------------------------
 void Terminal_Uart_Inicializar(void)
 {
+
+	gsTerminalUart.EnviarComando 	= Terminal_Uart_EnviarComando;
+	gsTerminalUart.Recibir			 	=	Terminal_Uart_Recibir;
+	gsTerminalUart.GetCharRx			=	Terminal_Uart_GetCharRx;
+	gsTerminalUart.Atencion			  =	Terminal_Uart_Atencion;
+	
 	Serial_Iniciar();
 	gsTerminalUart.Flag.all = 0x00;
 	gsSerial.InitBuzzer(GPIOI, GPIO_PIN_3);
@@ -64,12 +106,19 @@ void Terminal_Uart_Inicializar(void)
 
 
 
-//---------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------------
+//Name: 
+//
+//Description:
 //
 //
+//Parameters: 
 //
+//Return: 
 //
-//---------------------------------------------------
+//Author: Aurelio Siordia González
+//Fecha: 20/01/2017
+//-------------------------------------------------------------------------------------------------------------------------
 void Terminal_Uart_EnviarComando(UART_HandleTypeDef * UARTEnviar)
 {
 	int8_t Status;
@@ -86,12 +135,19 @@ void Terminal_Uart_EnviarComando(UART_HandleTypeDef * UARTEnviar)
 	gsTerminalUart.Flag.Enviando = false;
 }
 
-//---------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------------
+//Name: 
+//
+//Description:
 //
 //
+//Parameters: 
 //
+//Return: 
 //
-//---------------------------------------------------
+//Author: Aurelio Siordia González
+//Fecha: 20/01/2017
+//-------------------------------------------------------------------------------------------------------------------------
 uint8_t Terminal_Uart_Recibir(UART_HandleTypeDef * UARTRecibir)
 {
 	uint8_t CaracterRecibido = 0x00;
@@ -121,12 +177,19 @@ uint8_t Terminal_Uart_GetCharRx(void)
 	return gsTerminalUart.CharRx;
 }
 
-//---------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------------
+//Name: 
+//
+//Description:
 //
 //
+//Parameters: 
 //
+//Return: 
 //
-//---------------------------------------------------
+//Author: Aurelio Siordia González
+//Fecha: 20/01/2017
+//-------------------------------------------------------------------------------------------------------------------------
 void Terminal_Uart_Atencion(UART_HandleTypeDef UART)
 {
 	Terminal_Uart_EnviarComando(&UART);
